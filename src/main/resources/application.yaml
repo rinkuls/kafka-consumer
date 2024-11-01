@@ -20,10 +20,10 @@ spring:
         specific:
           avro:
             reader: "true"
+        request.timeout.ms: 60000  # New timeout property
       max:
         poll:
-          interval:
-            ms: 2000000
+          interval.ms: 2000000
           records: 10
     group:
       id: "myTopic-group-id"

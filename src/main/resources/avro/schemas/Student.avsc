@@ -1,0 +1,26 @@
+{
+    "type": "record",
+    "name": "StudentRecord",
+    "namespace": "com.rinkul.avro.schema",
+    "fields": [
+    {
+        "name": "empId",
+        "type": ["null","long"],
+        "default": null
+    },
+    {
+        "name": "firstName",
+         "type": ["null","string"],
+        "default": null
+    },
+    {
+        "name": "lastName",
+        "type": ["null","string"],
+        "default": null
+    },
+    {
+        "name": "age",
+        "type": ["null","int"],
+        "default": null
+    }]
+}

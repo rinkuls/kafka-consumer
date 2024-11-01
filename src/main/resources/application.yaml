@@ -1,0 +1,29 @@
+server:
+  port: 8082
+
+avro:
+  topic:
+    name: "avrotest1"
+
+spring:
+  kafka:
+    bootstrap-servers: "kafka-deployment.default.svc.cluster.local:9092"  # Use the service name of your Kafka cluster
+    consumer:
+      keyDeserializer: "org.apache.kafka.common.serialization.StringDeserializer"
+      valueDeserializer: "io.confluent.kafka.serializers.KafkaAvroDeserializer"
+      autoOffsetReset: "earliest"
+      properties:
+        schema:
+          registry:
+            url: "http://my-schema-registry.default.svc.cluster.local:8081"  # Use the service name of your Schema Registry
+
+        specific:
+          avro:
+            reader: "true"
+      max:
+        poll:
+          interval:
+            ms: 2000000
+          records: 10
+    group:
+      id: "myTopic-group-id"

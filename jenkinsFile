@@ -1,0 +1,88 @@
+node {
+    def WORKSPACE = "/var/lib/jenkins/workspace/kafka-producer"
+    def buildNumber = env.BUILD_NUMBER ?: '0'  // Jenkins build number
+    def dockerImageTag = "rinkuls/kafka-consumer:${buildNumber}"  // Docker image tag
+    def helmChartName = "kafka-consumer-chart"
+    def releaseName = "kafka-consumer-release"
+
+
+
+    try {
+        // Stage 1: Clone Repository
+        stage('Clone Repository') {
+            git url: 'https://github.com/rinkuls/kafka-consumer.git',
+                credentialsId: 'springdeploy-user',
+                branch: 'main'
+        }
+
+        // Stage 2: Build Application
+        stage('Build Application') {
+            echo "Building the kafka-consumer Java Application with Maven"
+            bat "mvn clean install"
+        }
+
+        // Stage 3: Build Docker Image
+        stage('Build Docker Image') {
+            echo "Building Docker image: ${dockerImageTag}"
+            def dockerImage = docker.build(dockerImageTag)
+            echo "Docker Image built successfully: ${dockerImageTag}"
+        }
+
+        // Stage 4: Push Docker Image to Docker Hub
+       // Push Docker Image to Docker Hub
+              stage('Push Docker Image to Docker Hub') {
+                  withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials-id', passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USERNAME')]) {
+                      // Log in to Docker Hub
+                      bat '''
+                          docker login -u %DOCKER_HUB_USERNAME% -p %DOCKER_HUB_PASSWORD% || exit 255
+                      '''
+
+                      // Push Docker image to Docker Hub
+                      bat "docker push ${dockerImageTag} || exit 255"
+                  }
+              }
+  stage('Deploy to Minikube with Helm') {
+            echo "Deploying to Minikube using Helm with image: ${dockerImageTag}"
+            bat 'kubectl config use-context minikube'
+
+            // Update Helm chart with new Docker image tag
+             bat "helm upgrade --install ${releaseName} ${helmChartName} --set image.tag=${buildNumber} --namespace default || exit 255"
+
+
+
+            // Verify Helm release status
+            bat "helm status ${releaseName} || exit 255"
+
+            // Optionally, check pod status after the deployment
+            bat 'kubectl get pods --namespace default || exit 255'
+
+
+        }
+
+
+
+    } catch (Exception e) {
+        echo "Error occurred: ${e.message}"
+        currentBuild.result = 'FAILED'
+        notifyBuild('FAILED')
+        throw e
+    } finally {
+        echo "Cleaning up resources"
+    }
+}
+
+// Email notification function
+def notifyBuild(String buildStatus = 'STARTED') {
+    buildStatus = buildStatus ?: 'SUCCESSFUL'
+    def now = new Date()
+    def subject_email = "kafka-consumer Deployment - Status: ${buildStatus}"
+    def details = """<p>${buildStatus} JOB</p>
+    <p>Job: ${env.JOB_NAME} - Build Number: [${env.BUILD_NUMBER}] - Time: ${now}</p>
+    <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
+
+    emailext(
+        to: "rinkulsharma123@gmail.com",
+        subject: subject_email,
+        body: details
+    )
+}

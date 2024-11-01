@@ -2,7 +2,7 @@ node {
     def WORKSPACE = "/var/lib/jenkins/workspace/kafka-producer"
     def buildNumber = env.BUILD_NUMBER ?: '0'  // Jenkins build number
     def dockerImageTag = "rinkuls/kafka-consumer:${buildNumber}"  // Docker image tag
-    def helmChartName = "kafka-consumer-chart"
+    def helmChartName = "kafka-consumer"
     def releaseName = "kafka-consumer-release"
 
 

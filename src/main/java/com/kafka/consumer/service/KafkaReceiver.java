@@ -35,6 +35,8 @@ public class KafkaReceiver {
 
     @KafkaListener(topics = "${avro.topic.name}", groupId = "${spring.kafka.group.id}", containerFactory = "kafkaListenerContainerFactory")
     public void read(ConsumerRecord<String, StudentRecord> record, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic, @Header(KafkaHeaders.OFFSET) long offset) throws JsonProcessingException {
+
+        LOGGER.info(" hey i got something and in reciver received");
         var createPersonUrl = "http://192.168.178.24:8080/student/add";
         String key = record.key();
         StudentRecord studentRecord = record.value();
@@ -45,16 +47,16 @@ public class KafkaReceiver {
         var headers = new HttpHeaders();
 
 
-        headers.setContentType(MediaType.APPLICATION_JSON);
+       // headers.setContentType(MediaType.APPLICATION_JSON);
 
         //one approach
 
-        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        String jsonObjectFromJava = ow.writeValueAsString(Student.builder().age(studentRecord.getAge()).empId(studentRecord.getEmpId()).firstName(studentRecord.getFirstName().toString()).lastName(studentRecord.getLastName().toString()).build());
-        HttpEntity<String> request =
-                new HttpEntity<>(jsonObjectFromJava, headers);
-        ResponseEntity<String> responseEntityStr = restTemplate.
-                postForEntity(createPersonUrl, request, String.class);
+        //ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        //String jsonObjectFromJava = ow.writeValueAsString(Student.builder().age(studentRecord.getAge()).empId(studentRecord.getEmpId()).firstName(studentRecord.getFirstName().toString()).lastName(studentRecord.getLastName().toString()).build());
+        //HttpEntity<String> request =
+          //      new HttpEntity<>(jsonObjectFromJava, headers);
+        //ResponseEntity<String> responseEntityStr = restTemplate.
+          //      postForEntity(createPersonUrl, request, String.class);
        }
 
     @DltHandler

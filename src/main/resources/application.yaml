@@ -9,17 +9,15 @@ spring:
   kafka:
     bootstrap-servers: "kafka-deployment.default.svc.cluster.local:9092"  # Use the service name of your Kafka cluster
     consumer:
-      keyDeserializer: "org.apache.kafka.common.serialization.StringDeserializer"
-      valueDeserializer: "io.confluent.kafka.serializers.KafkaAvroDeserializer"
+      # Set ErrorHandlingDeserializer for both key and value
+      keyDeserializer: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
+      valueDeserializer: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
       autoOffsetReset: "earliest"
       properties:
-        schema:
-          registry:
-            url: "http://my-schema-registry.default.svc.cluster.local:8081"  # Use the service name of your Schema Registry
-
-        specific:
-          avro:
-            reader: "true"
+        spring.deserializer.key.delegate.class: "org.apache.kafka.common.serialization.StringDeserializer"
+        spring.deserializer.value.delegate.class: "io.confluent.kafka.serializers.KafkaAvroDeserializer"
+        schema.registry.url: "http://my-schema-registry.default.svc.cluster.local:8081"  # Service name of your Schema Registry
+        specific.avro.reader: "true"
         request.timeout.ms: 60000  # New timeout property
       max:
         poll:

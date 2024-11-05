@@ -4,24 +4,33 @@ server:
 avro:
   topic:
     name: "avroTopic"
+  dlt:
+    name: "avroTopic-dlt"  # Name for the DLT topic
 
 spring:
   kafka:
-    bootstrap-servers: "kafka-deployment.default.svc.cluster.local:9092"  # Use the service name of your Kafka cluster
+    bootstrap-servers: "kafka-deployment.default.svc.cluster.local:9092"
     consumer:
-      # Set ErrorHandlingDeserializer for both key and value
       keyDeserializer: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
       valueDeserializer: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
       autoOffsetReset: "earliest"
       properties:
         spring.deserializer.key.delegate.class: "org.apache.kafka.common.serialization.StringDeserializer"
         spring.deserializer.value.delegate.class: "io.confluent.kafka.serializers.KafkaAvroDeserializer"
-        schema.registry.url: "http://my-schema-registry.default.svc.cluster.local:8081"  # Service name of your Schema Registry
+        schema.registry.url: "http://my-schema-registry.default.svc.cluster.local:8081"
         specific.avro.reader: "true"
-        request.timeout.ms: 60000  # New timeout property
       max:
         poll:
           interval.ms: 2000000
           records: 10
+      enable-auto-commit: false
+    listener:
+      ack-mode: "MANUAL"
     group:
       id: "avroTopic-group"
+
+retry:
+  attempts: 3  # Number of retry attempts for the main topic
+  backoff:
+    initialInterval: 2000  # Initial interval between retries in ms
+    multiplier: 2.0  # Multiplier for the retry backoff

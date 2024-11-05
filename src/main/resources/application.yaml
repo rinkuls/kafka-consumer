@@ -5,7 +5,7 @@ avro:
   topic:
     name: "avroTopic"
   dlt:
-    name: "avroTopic-dlt"
+    name: "dltTopic"
     group: "dltGroup"# Name for the DLT topic
 
 spring:

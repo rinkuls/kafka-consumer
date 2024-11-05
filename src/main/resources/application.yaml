@@ -5,7 +5,8 @@ avro:
   topic:
     name: "avroTopic"
   dlt:
-    name: "avroTopic-dlt"  # Name for the DLT topic
+    name: "avroTopic-dlt"
+    group: "dltGroup"# Name for the DLT topic
 
 spring:
   kafka:

@@ -5,6 +5,8 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,8 +17,8 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
-import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.DeserializationException;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,12 +27,9 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConsumerConfig {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerConfig.class);
     @Value("${spring.kafka.bootstrap-servers}")
     private String kafkaServer;
-
-    @Value("${spring.kafka.group.id}")
-    private String kafkaGroupId;
-
     @Value("${spring.kafka.consumer.properties.schema.registry.url}")
     private String schemaRegistryUrl;
 
@@ -40,7 +39,6 @@ public class KafkaConsumerConfig {
 
         // Set up Kafka server and group ID
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaGroupId);
 
         // Use ErrorHandlingDeserializer with delegate deserializers
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
@@ -67,9 +65,11 @@ public class KafkaConsumerConfig {
                 (consumerRecord, exception) -> {
                     if (exception instanceof DeserializationException) {
                         // Handle deserialization exceptions, such as logging them
+                        LOGGER.info(" hey i got some error DeserializationException");
                         System.err.println("Deserialization error for record: " + consumerRecord + ", exception: " + exception);
                     } else {
                         // Handle other exceptions
+                        LOGGER.info(" hey i got some other exceptions error");
                         System.err.println("General error for record: " + consumerRecord + ", exception: " + exception);
                     }
                 }

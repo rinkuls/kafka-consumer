@@ -3,7 +3,7 @@ server:
 
 avro:
   topic:
-    name: "avrotest1"
+    name: "avroTopic"
 
 spring:
   kafka:
@@ -24,4 +24,4 @@ spring:
           interval.ms: 2000000
           records: 10
     group:
-      id: "myTopic-group-id"
+      id: "avroTopic-group"

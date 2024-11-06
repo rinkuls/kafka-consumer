@@ -4,6 +4,7 @@ import com.rinkul.avro.schema.StudentRecord;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,22 +45,15 @@ public class KafkaConsumerConfig {
     @Value("${avro.dlt.name}")
     private String dltTopic;
 
+    // Standard ConsumerFactory for Avro-serialized main topic
     @Bean
     public ConsumerFactory<String, StudentRecord> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
-
-        // Set up Kafka server and group ID
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-
-        // Use ErrorHandlingDeserializer with delegate deserializers
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-
-        // Configure delegate deserializers
         config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class.getName());
         config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, KafkaAvroDeserializer.class.getName());
-
-        // Specific Avro configuration
         config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
         config.put("schema.registry.url", schemaRegistryUrl);
 
@@ -71,22 +65,38 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, StudentRecord> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
 
-        // Set up exponential backoff retry policy
         ExponentialBackOffWithMaxRetries backOff = new ExponentialBackOffWithMaxRetries(retryAttempts);
         backOff.setInitialInterval(initialBackOffInterval);
         backOff.setMultiplier(backOffMultiplier);
 
-        // Custom error handler that logs records as sent to DLT after retries are exhausted
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(backOff);
         errorHandler.setRetryListeners((record, ex, deliveryAttempt) -> {
             LOGGER.info("Retry attempt {} for record: {}", deliveryAttempt, record);
         });
-
 
         factory.setCommonErrorHandler(errorHandler);
 
         return factory;
     }
 
+    // DLT ConsumerFactory with StringDeserializer for generic object handling
+    @Bean
+    public ConsumerFactory<String, String> dltConsumerFactory() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        return new DefaultKafkaConsumerFactory<>(config);
+    }
 
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> dltKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(dltConsumerFactory());
+
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler();
+        factory.setCommonErrorHandler(errorHandler);
+
+        return factory;
+    }
 }

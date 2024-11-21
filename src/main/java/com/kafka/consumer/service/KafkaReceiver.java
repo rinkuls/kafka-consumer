@@ -1,6 +1,7 @@
 package com.kafka.consumer.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kafka.consumer.model.Student;
 import com.rinkul.avro.schema.StudentRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -54,11 +55,19 @@ public class KafkaReceiver {
         LOGGER.info("Modified StudentRecord: {}", original);
         return original;
     }
+    private Student convertToStudent(StudentRecord studentRecord) {
+        Student student = Student.builder().build();
+        student.setEmpId(studentRecord.getEmpId());
+        student.setFirstName((String) studentRecord.getFirstName());
+        student.setLastName((String) studentRecord.getLastName());
+        student.setAge(studentRecord.getAge());
+        return student;
+    }
 
     private void sendToDbService(StudentRecord studentRecord) {
         try {
             // Convert the StudentRecord object to JSON
-            String jsonPayload = objectMapper.writeValueAsString(studentRecord);
+            String jsonPayload = objectMapper.writeValueAsString(convertToStudent(studentRecord));
 
             // Build the HTTP request
             HttpRequest request = HttpRequest.newBuilder()

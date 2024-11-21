@@ -1,7 +1,6 @@
 server:
   port: 8082
 dbservice:
-
   url: "http://todo-management-spring-boot.test.svc.cluster.local:8780/student/add"
 avro:
   topic:

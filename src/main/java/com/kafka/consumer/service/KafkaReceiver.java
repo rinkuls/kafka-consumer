@@ -55,14 +55,16 @@ public class KafkaReceiver {
         LOGGER.info("Modified StudentRecord: {}", original);
         return original;
     }
+
     private Student convertToStudent(StudentRecord studentRecord) {
         Student student = Student.builder().build();
         student.setEmpId(studentRecord.getEmpId());
-        student.setFirstName((String) studentRecord.getFirstName());
-        student.setLastName((String) studentRecord.getLastName());
+        student.setFirstName(studentRecord.getFirstName().toString()); // Use toString() to handle Utf8
+        student.setLastName(studentRecord.getLastName().toString());  // Use toString() to handle Utf8
         student.setAge(studentRecord.getAge());
         return student;
     }
+
 
     private void sendToDbService(StudentRecord studentRecord) {
         try {

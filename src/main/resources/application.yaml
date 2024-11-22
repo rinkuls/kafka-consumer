@@ -1,7 +1,7 @@
 server:
   port: 8082
 dbservice:
-  url: "http://todo-management-release.test.svc.cluster.local:8780/student/add"
+  url: "http://todo-management-release.my-db.svc.cluster.local:8780/student/add"
 avro:
   topic:
     name: "avroTopic"
@@ -11,7 +11,7 @@ avro:
 
 spring:
   kafka:
-    bootstrap-servers: "kafka-deployment.default.svc.cluster.local:9092"
+    bootstrap-servers: "kafka-deployment.kafka-infra.svc.cluster.local:9092"
     consumer:
       keyDeserializer: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
       valueDeserializer: "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer"
@@ -19,7 +19,7 @@ spring:
       properties:
         spring.deserializer.key.delegate.class: "org.apache.kafka.common.serialization.StringDeserializer"
         spring.deserializer.value.delegate.class: "io.confluent.kafka.serializers.KafkaAvroDeserializer"
-        schema.registry.url: "http://my-schema-registry.default.svc.cluster.local:8081"
+        schema.registry.url: "http://my-schema-registry.kafka-infra.svc.cluster.local:8081"
         specific.avro.reader: "true"
       max:
         poll:

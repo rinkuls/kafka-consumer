@@ -46,7 +46,7 @@ node {
             bat 'kubectl config use-context minikube'
 
             // Update Helm chart with new Docker image tag
-             bat "helm upgrade --install ${releaseName} ${helmChartName} --set image.tag=${buildNumber} --namespace default || exit 255"
+             bat "helm upgrade --install ${releaseName} ${helmChartName} --set image.tag=${buildNumber} --namespace my-consumer || exit 255"
 
 
 
@@ -54,7 +54,7 @@ node {
             bat "helm status ${releaseName} || exit 255"
 
             // Optionally, check pod status after the deployment
-            bat 'kubectl get pods --namespace default || exit 255'
+            bat 'kubectl get pods --namespace my-consumer || exit 255'
 
 
         }

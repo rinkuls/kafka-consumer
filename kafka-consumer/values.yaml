@@ -25,8 +25,8 @@ service:
   port: 8082
 
 kafka:
-  bootstrapServers: "kafka-deployment.default.svc.cluster.local:9092"
-  schemaRegistryUrl: "http://my-schema-registry.default.svc.cluster.local:8081"
+  bootstrapServers: "kafka-deployment.kafka-infra.svc.cluster.local:9092"
+  schemaRegistryUrl: "http://my-schema-registry.kafka-infra.svc.cluster.local:8081"
 
 ingress:
   enabled: false

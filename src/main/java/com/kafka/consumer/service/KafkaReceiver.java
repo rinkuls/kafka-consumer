@@ -41,7 +41,7 @@ public class KafkaReceiver {
         LOGGER.info("Received from topic: {}", topic);
         LOGGER.info("Offset: {}", offset);
         LOGGER.info("dbServiceUrlnnnnnnnnnnnnnnnnnnnnnn: {}", dbServiceUrl);
-        LOGGER.info("dbServiceUrl++++++++++++++++++++++++++++++++++++++++++++++++", "http://todo-management-spring-boot.test.svc.cluster.local:8780/student/add");
+        LOGGER.info("dbServiceUrl++++++++++++++++++++++++++++++++++++++++++++++++", "http://todo-management-spring-boot.my-db.svc.cluster.local:8780/student/add");
 
         // Modify the StudentRecord object as required
         StudentRecord modifiedRecord = modifyStudentRecord(record.value());
@@ -73,7 +73,7 @@ public class KafkaReceiver {
 
             // Build the HTTP request
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://todo-management-release.test.svc.cluster.local:8780/student/add"))
+                    .uri(URI.create("http://todo-management-release.my-db.svc.cluster.local:8780/student/add"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();

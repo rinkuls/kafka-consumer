@@ -51,7 +51,7 @@ node {
 
 
             // Verify Helm release status
-            bat "helm status ${releaseName} || exit 255"
+            bat "helm status ${releaseName} --namespace my-consumer || exit 255"
 
             // Optionally, check pod status after the deployment
             bat 'kubectl get pods --namespace my-consumer || exit 255'

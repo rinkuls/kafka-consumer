@@ -2,15 +2,20 @@ package com.kafka.consumer.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kafka.consumer.model.Student;
-import com.rinkul.avro.schema.StudentRecord;
+import com.kafka.consumer.model.StudentRecordNotSent;
+import com.kafka.consumer.repo.StudentRecord;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -18,45 +23,29 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class KafkaReceiver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaReceiver.class);
-
+    private final StudentRecord studentRecord;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
-
     @Value("${dbservice.url}")
     private String dbServiceUrl;
 
-    public KafkaReceiver() {
-        this.httpClient = HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper();
-    }
 
     @KafkaListener(topics = "${avro.topic.name}", groupId = "${spring.kafka.group.id}", containerFactory = "kafkaListenerContainerFactory")
-    public void read(ConsumerRecord<String, StudentRecord> record,
+    @RetryableTopic(attempts = "4")// 3 topic N-1
+    public void read(com.rinkul.avro.schema.StudentRecord record,
                      @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                      @Header(KafkaHeaders.OFFSET) long offset) {
-        LOGGER.info("Received data - {}", record.value());
-        LOGGER.info("Received from topic: {}", topic);
-        LOGGER.info("Offset: {}", offset);
-        LOGGER.info("dbServiceUrlnnnnnnnnnnnnnnnnnnnnnn: {}", dbServiceUrl);
-        LOGGER.info("dbServiceUrl++++++++++++++++++++++++++++++++++++++++++++++++", "http://todo-management-spring-boot.my-db.svc.cluster.local:8780/student/add");
-
-        // Modify the StudentRecord object as required
-        StudentRecord modifiedRecord = modifyStudentRecord(record.value());
-
-        // Send the modified record to dbService
-        sendToDbService(modifiedRecord);
+        LOGGER.info("Received data - {}", record);
+        sendToDbService(record);
     }
 
-    private StudentRecord modifyStudentRecord(StudentRecord original) {
 
-        LOGGER.info("Modified StudentRecord: {}", original);
-        return original;
-    }
-
-    private Student convertToStudent(StudentRecord studentRecord) {
+    private Student convertToStudent(com.rinkul.avro.schema.StudentRecord studentRecord) {
         Student student = Student.builder().build();
         student.setEmpId(studentRecord.getEmpId());
         student.setFirstName(studentRecord.getFirstName().toString()); // Use toString() to handle Utf8
@@ -66,7 +55,7 @@ public class KafkaReceiver {
     }
 
 
-    private void sendToDbService(StudentRecord studentRecord) {
+    private void sendToDbService(com.rinkul.avro.schema.StudentRecord studentRecord) {
         try {
             // Convert the StudentRecord object to JSON
             String jsonPayload = objectMapper.writeValueAsString(convertToStudent(studentRecord));
@@ -84,20 +73,34 @@ public class KafkaReceiver {
             if (response.statusCode() == 200 || response.statusCode() == 201) {
                 LOGGER.info("Successfully sent data to dbService: {}", response.body());
             } else {
-                LOGGER.error("Failed to send data to dbService. HTTP Status: {}. Response: {}",
-                        response.statusCode(), response.body());
+                throw new RuntimeException("Service is down");
             }
         } catch (Exception e) {
-            LOGGER.error("Error occurred while sending data to dbService: {}", e.getMessage(), e);
+            throw new RuntimeException("Service is down");
         }
+    }
+
+    @DltHandler
+    public void listenDLT(com.rinkul.avro.schema.StudentRecord record,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(KafkaHeaders.OFFSET) long offset) {
+        LOGGER.info("DLT Received because data was not sent to db service  : {} , from {} , offset {}", record.getFirstName(), topic, offset);
+        LOGGER.info("+++++++++++++++++Now saving to temp DB and this data should be processes again by some JOB once DB service is up" +
+                "++++++++++++++++++++ ");
+        StudentRecordNotSent studentRecordNotSent = StudentRecordNotSent.builder().build();
+        studentRecordNotSent.setEmpId(record.getEmpId());
+        studentRecordNotSent.setFirstName(record.getFirstName().toString()); // Use toString() to handle Utf8
+        studentRecordNotSent.setLastName(record.getLastName().toString());  // Use toString() to handle Utf8
+        studentRecordNotSent.setAge(record.getAge());
+        studentRecord.save(studentRecordNotSent);
     }
 
     @KafkaListener(topics = "${avro.dlt.name}", groupId = "${avro.dlt.group}", containerFactory = "dltKafkaListenerContainerFactory")
     public void listenDLT(ConsumerRecord<String, String> record,
                           @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                           @Header(KafkaHeaders.OFFSET) long offset) {
-        LOGGER.error("DLT Processing - Data: {} sent to DLT due to error in processing", record.value());
-        LOGGER.error("DLT topic: {}", topic);
-        LOGGER.error("DLT offset: {}", offset);
+        LOGGER.error("topicForWrongSchema Processing - Data: {} sent to topicForWrongSchema due to wrong schema of messages in processing", record.value());
+        LOGGER.error("topicForWrongSchema topic: {}", topic);
+        LOGGER.error("topicForWrongSchema offset: {}", offset);
     }
 }

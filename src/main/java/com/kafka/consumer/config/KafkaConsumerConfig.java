@@ -3,8 +3,11 @@ package com.kafka.consumer.config;
 import com.rinkul.avro.schema.StudentRecord;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,8 +15,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
@@ -30,12 +33,20 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String kafkaServer;
 
+    @Value("${spring.kafka.bootstrap-servers-compose}")
+    private String kafkaServerForDockerCompose;
+
     @Value("${spring.kafka.consumer.properties.schema.registry.url}")
     private String schemaRegistryUrl;
+
+    @Value("${spring.kafka.consumer.properties.DockerComposeSchemaUrl}")
+    private String dockerComposeSchemaRegistryUrl;
 
     @Value("${retry.attempts}")
     private int retryAttempts;
 
+    @Value("${USE_DOCKER_COMPOSE:false}")
+    private boolean useDockerCompose;
     @Value("${retry.backoff.initialInterval}")
     private long initialBackOffInterval;
 
@@ -43,19 +54,25 @@ public class KafkaConsumerConfig {
     private double backOffMultiplier;
 
     @Value("${avro.dlt.name}")
-    private String dltTopic;
+    private String topicForWrongSchema;
 
-    // Standard ConsumerFactory for Avro-serialized main topic
+    // Main Consumer Factory for Avro-serialized main topic
     @Bean
     public ConsumerFactory<String, StudentRecord> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
+        String finalSchemaRegistryUrl = useDockerCompose ? dockerComposeSchemaRegistryUrl : schemaRegistryUrl;
+        String finalKafkaServer = useDockerCompose ? kafkaServerForDockerCompose : kafkaServer;
+
+
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, finalKafkaServer); //"172.20.0.1:9092"
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class.getName());
-        config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, KafkaAvroDeserializer.class.getName());
+        config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class);
+        //config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class); // Updated
+        // config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
         config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
-        config.put("schema.registry.url", schemaRegistryUrl);
+        config.put("schema.registry.url", finalSchemaRegistryUrl); //"http://schema-registry:8081"
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new DefaultKafkaConsumerFactory<>(config);
@@ -80,13 +97,24 @@ public class KafkaConsumerConfig {
         return factory;
     }
 
-    // DLT ConsumerFactory with StringDeserializer for generic object handling
+    // DLT Consumer Factory with StringDeserializer for generic object handling
     @Bean
     public ConsumerFactory<String, String> dltConsumerFactory() {
         Map<String, Object> config = new HashMap<>();
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        String finalSchemaRegistryUrl = useDockerCompose ? dockerComposeSchemaRegistryUrl : schemaRegistryUrl;
+        String finalKafkaServer = useDockerCompose ? kafkaServerForDockerCompose : kafkaServer;
+
+
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, finalKafkaServer);//"172.20.0.1:9092"
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class);
+        config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
+        config.put("schema.registry.url", finalSchemaRegistryUrl); //"http://schema-registry:8081"
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
@@ -100,4 +128,34 @@ public class KafkaConsumerConfig {
 
         return factory;
     }
+
+    // DLT Producer Factory
+    @Bean
+    public ProducerFactory<String, Object> producerFactory() {
+        Map<String, Object> config = new HashMap<>();
+        String finalSchemaRegistryUrl = useDockerCompose ? dockerComposeSchemaRegistryUrl : schemaRegistryUrl;
+        String finalKafkaServer = useDockerCompose ? kafkaServerForDockerCompose : kafkaServer;
+
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, finalKafkaServer); //"172.20.0.1:9092"
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        config.put("schema.registry.url", finalSchemaRegistryUrl); //"http://schema-registry:8081"
+
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer() {
+        return new DeadLetterPublishingRecoverer(kafkaTemplate(), (record, ex) -> {
+            LOGGER.error("Publishing to DLT due to exception: {}", ex.getMessage());
+            return new org.apache.kafka.common.TopicPartition(topicForWrongSchema, record.partition());
+        });
+    }
+
+
 }

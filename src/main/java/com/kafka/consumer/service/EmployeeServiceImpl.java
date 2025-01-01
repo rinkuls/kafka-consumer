@@ -98,12 +98,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void sendToEmployeeManagementToolService(Employee retVal) {
         try {
-            var dbUrl = useDockerCompose ? dockerEmployeeServiceUrl : clusterEmployeeServiceUrl;
+            var empToolUrl = useDockerCompose ? dockerEmployeeServiceUrl : clusterEmployeeServiceUrl;
 
             var jsonEmployeePayload = objectMapper.writeValueAsString(retVal);
             // Build the HTTP request
             var request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8071/api/v1/save"))
+                    .uri(URI.create(empToolUrl))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonEmployeePayload))
                     .build();

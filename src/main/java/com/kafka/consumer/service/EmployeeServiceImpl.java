@@ -99,7 +99,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private void sendToEmployeeManagementToolService(Employee retVal) {
         try {
             var empToolUrl = useDockerCompose ? dockerEmployeeServiceUrl : clusterEmployeeServiceUrl;
-
+            LOGGER.info("-----------------------emptool url is below ---------------------", empToolUrl);
             var jsonEmployeePayload = objectMapper.writeValueAsString(retVal);
             // Build the HTTP request
             var request = HttpRequest.newBuilder()

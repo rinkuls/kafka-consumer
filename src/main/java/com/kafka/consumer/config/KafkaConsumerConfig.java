@@ -1,6 +1,6 @@
 package com.kafka.consumer.config;
 
-import com.rinkul.avro.schema.StudentRecord;
+import com.rinkul.avro.schema.EmployeeRecord;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
@@ -58,29 +58,27 @@ public class KafkaConsumerConfig {
 
     // Main Consumer Factory for Avro-serialized main topic
     @Bean
-    public ConsumerFactory<String, StudentRecord> consumerFactory() {
+    public ConsumerFactory<String, EmployeeRecord> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
         String finalSchemaRegistryUrl = useDockerCompose ? dockerComposeSchemaRegistryUrl : schemaRegistryUrl;
         String finalKafkaServer = useDockerCompose ? kafkaServerForDockerCompose : kafkaServer;
 
 
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, finalKafkaServer); //"172.20.0.1:9092"
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "172.20.0.1:9092"); //"172.20.0.1:9092"
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
         config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class);
-        //config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class); // Updated
-        // config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
         config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
-        config.put("schema.registry.url", finalSchemaRegistryUrl); //"http://schema-registry:8081"
+        config.put("schema.registry.url", "http://localhost:8081"); //"http://schema-registry:8081"
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, StudentRecord> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, StudentRecord> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, EmployeeRecord> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, EmployeeRecord> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
 
         ExponentialBackOffWithMaxRetries backOff = new ExponentialBackOffWithMaxRetries(retryAttempts);
@@ -106,13 +104,13 @@ public class KafkaConsumerConfig {
         String finalKafkaServer = useDockerCompose ? kafkaServerForDockerCompose : kafkaServer;
 
 
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, finalKafkaServer);//"172.20.0.1:9092"
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "172.20.0.1:9092");//"172.20.0.1:9092"
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
         config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class);
         config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
-        config.put("schema.registry.url", finalSchemaRegistryUrl); //"http://schema-registry:8081"
+        config.put("schema.registry.url", "http://localhost:8081"); //"http://schema-registry:8081"
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new DefaultKafkaConsumerFactory<>(config);
@@ -136,10 +134,10 @@ public class KafkaConsumerConfig {
         String finalSchemaRegistryUrl = useDockerCompose ? dockerComposeSchemaRegistryUrl : schemaRegistryUrl;
         String finalKafkaServer = useDockerCompose ? kafkaServerForDockerCompose : kafkaServer;
 
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, finalKafkaServer); //"172.20.0.1:9092"
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "172.20.0.1:9092"); //"172.20.0.1:9092"
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        config.put("schema.registry.url", finalSchemaRegistryUrl); //"http://schema-registry:8081"
+        config.put("schema.registry.url", "http://localhost:8081"); //"http://schema-registry:8081"
 
         return new DefaultKafkaProducerFactory<>(config);
     }

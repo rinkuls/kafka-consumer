@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .email-container {
+            margin: 20px;
+        }
+        .email-container a {
+            display: inline-block;
+            text-decoration: none;
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .email-footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555555;
+        }
+
+
+
+
+
+
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <p>Hi {{name}},</p>
+    <p>Your data is not updated in the Employee Portal. Hence, an exception has been raised. Please use the link below
+        to update your details as soon as possible:</p>
+    <a href="{{updateLink}}">Update Your Data</a>
+    <p class="email-footer">
+        Best regards,<br>
+        Head of Global HR Core,<br>
+        Rinkul Sharma,<br>
+        SAP GmbH
+    </p>
+</div>
+</body>
+</html>

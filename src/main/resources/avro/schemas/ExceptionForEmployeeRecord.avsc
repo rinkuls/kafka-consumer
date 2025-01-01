@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "StudentRecord",
+    "name": "EmployeeRecord",
     "namespace": "com.rinkul.avro.schema",
     "fields": [
     {
@@ -19,8 +19,8 @@
         "default": null
     },
     {
-        "name": "age",
-        "type": ["null","int"],
+        "name": "email",
+        "type": ["null","string"],
         "default": null
     }]
 }

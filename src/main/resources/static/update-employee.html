@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Employee Record Update Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        form {
+            max-width: 800px;
+            margin: auto;
+            background: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+        input, textarea, select {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        input[readonly] {
+            background: #e9e9e9;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .section {
+            margin-bottom: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        .section h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .kid, .employment {
+            margin-bottom: 20px;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .remove-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+
+
+
+    </style>
+</head>
+<body>
+<h1>Employee Record Update Portal</h1>
+<div id="formMessages">
+    <div class="message success" id="successMessage">Form submitted successfully!</div>
+    <div class="message error" id="errorMessage">Failed to submit the form. Please try again.</div>
+</div>
+<form id="employeeForm">
+    <!-- Basic Information -->
+    <div class="section">
+        <h2>Basic Information</h2>
+        <label for="empId">Employee ID:</label>
+        <input id="empId" name="empId" readonly type="text" value="">
+
+        <label for="firstName">First Name:</label>
+        <input id="firstName" name="firstName" readonly type="text" value="">
+
+        <label for="lastName">Last Name:</label>
+        <input id="lastName" name="lastName" readonly type="text" value="">
+
+        <label for="email">Email:</label>
+        <input id="email" name="email" readonly type="email" value="">
+
+        <label for="phoneNumber">Phone Number:</label>
+        <input id="phoneNumber" name="phoneNumber" pattern="\d{10}" placeholder="Enter phone number" required
+               title="Enter a valid 10-digit phone number" type="text">
+
+        <label for="address">Address:</label>
+        <textarea id="address" maxlength="300" name="address" placeholder="Enter address" required></textarea>
+
+        <label for="married">Marital Status:</label>
+        <select id="married" name="married" required>
+            <option value="">Select</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </select>
+    </div>
+
+    <!-- Spouse Information -->
+    <div class="section" id="spouseSection" style="display: none;">
+        <h2>Spouse Information</h2>
+        <label for="spouseName">Name:</label>
+        <input id="spouseName" name="spouse.name" placeholder="Enter spouse's name" required type="text">
+
+        <label for="spouseAge">Age:</label>
+        <input id="spouseAge" name="spouse.age" placeholder="Enter spouse's age" required type="number">
+
+        <label for="spouseGender">Gender:</label>
+        <select id="spouseGender" name="spouse.gender" required>
+            <option value="">Select</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label for="spouseCurrentOccupation">CurrentOccupation:</label>
+        <input id="spouseCurrentOccupation" name="spouse.currentOccupation"
+               placeholder="Enter spouse's currentOccupation"
+               type="text">
+    </div>
+
+    <!-- Kids Information -->
+    <div class="section" id="kidsSection" style="display: none;">
+        <h2>Kids Details</h2>
+        <div id="kidsContainer"></div>
+        <button onclick="addKid()" type="button">Add Kid Information</button>
+    </div>
+
+    <!-- Current Employment -->
+    <div class="section">
+        <h2>Current Employment</h2>
+        <label for="currentCompany">Company:</label>
+        <input id="currentCompany" name="professionalDetails.currentCompany" placeholder="Enter current company name"
+               required type="text">
+
+        <label for="currentDesignation">Designation:</label>
+        <input id="currentDesignation" name="professionalDetails.currentDesignation"
+               placeholder="Enter current designation"
+               required type="text">
+
+        <label for="currentSalary">Salary:</label>
+        <input id="currentSalary" name="professionalDetails.currentSalary" pattern="\d+(\.\d{1,2})?"
+               placeholder="Enter current salary" required title="Enter a valid number with up to 2 decimal places"
+               type="text">
+
+        <label for="currentLocation">Location:</label>
+        <input id="currentLocation" name="professionalDetails.currentLocation" placeholder="Enter current work location"
+               required type="text">
+    </div>
+
+    <!-- Past Employment -->
+    <div class="section">
+        <h2>Past Employment</h2>
+        <label for="pastEmployment">Worked in Past:</label>
+        <select id="pastEmployment" name="pastEmployment" onchange="togglePastEmployment()" required>
+            <option value="">Select</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </select>
+
+        <div id="pastEmploymentsSection" style="display: none;">
+            <div id="pastEmploymentsContainer"></div>
+            <button onclick="addEmployment()" type="button">Add Past Employment Information</button>
+        </div>
+    </div>
+
+    <!-- Additional Information -->
+    <div class="section">
+        <h2>Additional Information</h2>
+        <label for="dreamWish">Dream Wish:</label>
+        <input id="dreamWish" name="dreamWish" placeholder="Enter your dream wish" type="text">
+
+        <label for="natureBehavior">Nature/Behavior:</label>
+        <input id="natureBehavior" name="natureBehavior" placeholder="Describe your nature/behavior" type="text">
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit">Submit</button>
+</form>
+
+<script>
+let kidCount = 0;
+let employmentCount = 0;
+
+document.getElementById("married").addEventListener("change", function () {
+    const isMarried = this.value === "true";
+    document.getElementById("spouseSection").style.display = isMarried ? "block" : "none";
+    document.getElementById("kidsSection").style.display = isMarried ? "block" : "none";
+});
+
+function addKid() {
+    const kidsContainer = document.getElementById("kidsContainer");
+    const kidDiv = document.createElement("div");
+    kidDiv.classList.add("kid");
+    kidDiv.innerHTML = `
+        <button type="button" class="remove-button" onclick="removeElement(this)">Delete</button>
+        <label>Name:</label>
+        <input type="text" name="kids[${kidCount}].name" placeholder="Enter child's name" required>
+
+        <label>Age:</label>
+        <input type="number" name="kids[${kidCount}].age" placeholder="Enter child's age" required>
+
+
+
+        <label>Gender:</label>
+        <select name="kids[${kidCount}].gender" required>
+            <option value="">Select</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Other">Other</option>
+        </select>
+ <label>Profession:</label>
+        <input type="text" name="kids[${kidCount}].profession" placeholder="Enter child's profession" required>
+    `;
+    kidsContainer.appendChild(kidDiv);
+    kidCount++;
+}
+
+function addEmployment() {
+    const pastEmploymentsContainer = document.getElementById("pastEmploymentsContainer");
+    const employmentDiv = document.createElement("div");
+    employmentDiv.classList.add("employment");
+    employmentDiv.innerHTML = `
+        <button type="button" class="remove-button" onclick="removeElement(this)">Delete</button>
+        <label>Company:</label>
+        <input type="text" name="pastEmployments[${employmentCount}].companyName" placeholder="Enter company name" required>
+        <label>Designation:</label>
+        <input type="text" name="pastEmployments[${employmentCount}].designation" placeholder="Enter designation" required>`;
+    pastEmploymentsContainer.appendChild(employmentDiv);
+    employmentCount++;
+}
+
+function togglePastEmployment() {
+    const isWorkedInPast = document.getElementById("pastEmployment").value === "true";
+    document.getElementById("pastEmploymentsSection").style.display = isWorkedInPast ? "block" : "none";
+}
+
+function removeElement(button) {
+    button.parentElement.remove();
+
+
+}
+
+
+function getQueryParams() {
+    const params = {};
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    urlParams.forEach((value, key) => {
+        params[key] = value;
+    });
+    return params;
+}
+
+
+window.onload = function() {
+    const params = getQueryParams();
+    if (params.empId) document.getElementById("empId").value = decodeURIComponent(params.empId);
+    if (params.firstName) document.getElementById("firstName").value = decodeURIComponent(params.firstName);
+    if (params.lastName) document.getElementById("lastName").value = decodeURIComponent(params.lastName);
+    if (params.email) document.getElementById("email").value = decodeURIComponent(params.email);
+};
+
+
+document.querySelector("#employeeForm").addEventListener("submit", function (event) {
+    event.preventDefault(); // Prevent default form submission
+      const successMessage = document.getElementById("successMessage");
+        const errorMessage = document.getElementById("errorMessage");
+
+        // Hide previous messages
+        successMessage.style.display = "none";
+        errorMessage.style.display = "none";
+
+    const formData = new FormData(event.target);
+    const data = {};
+
+     formData.forEach((value, key) => {
+        // Handle nested keys for "spouse" and "professionalDetails"
+        if (key.startsWith("spouse.")) {
+            const property = key.split(".")[1];
+            if (!data.spouse) data.spouse = {};
+            data.spouse[property] = value;
+        } else if (key.startsWith("professionalDetails.")) {
+            const property = key.split(".")[1];
+            if (!data.professionalDetails) data.professionalDetails = {};
+            data.professionalDetails[property] = value;
+        } else if (key.startsWith("kids[")) {
+            const [prefix, index, property] = key.split(/[.\[\]]+/).filter(Boolean);
+            if (!data.kids) data.kids = [];
+            if (!data.kids[index]) data.kids[index] = {};
+            data.kids[index][property] = value;
+
+        } else if (key.startsWith("pastEmployments[")) {
+            const [prefix, index, property] = key.split(/[.\[\]]+/).filter(Boolean);
+            if (!data.pastEmployments) data.pastEmployments = [];
+            if (!data.pastEmployments[index]) data.pastEmployments[index] = {};
+            data.pastEmployments[index][property] = value;
+        } else {
+            data[key] = value;
+        }
+    });
+
+    // Combine firstName and lastName into a single name field
+    const firstName = document.getElementById("firstName").value;
+    const lastName = document.getElementById("lastName").value;
+    data.name = `${firstName} ${lastName}`;
+
+    console.log("Constructed Data Object with Name Field:", data);
+
+    fetch("http://localhost:8082/api/v1/save", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    })
+        .then(async (response) => {
+            if (!response.ok) {
+                const errorResponse = await response.json();
+                    throw new Error(errorResponse.message || `HTTP Error: ${response.status}`);
+
+            }
+            return response.json();
+        })
+        .then(() => {
+             successMessage.style.display = "block";
+             successMessage.textContent = "Form submitted successfully!";
+        })
+        .catch(() => {
+            errorMessage.style.display = "block";
+            errorMessage.textContent = `Failed to submit the form: ${error.message}`;
+        });
+});
+
+
+
+
+</script>
+</body>
+</html>

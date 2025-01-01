@@ -8,42 +8,45 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.listener.ListenerExecutionFailedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
+@RestController
 public class KafkaExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaExceptionHandler.class);
 
     @ExceptionHandler(KafkaException.class)
-    public ResponseEntity<Object> handleKafkaException(KafkaException ex) {
+    public ResponseEntity<Map<String, Object>> handleKafkaException(KafkaException ex) {
         LOGGER.error("Kafka error: {}", ex.getMessage());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR);
-        response.put("message", "Internal Kafka error. Please try again later.");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Kafka error occurred. Please try again.");
     }
 
     @ExceptionHandler(ListenerExecutionFailedException.class)
-    public ResponseEntity<Object> handleListenerException(ListenerExecutionFailedException ex) {
+    public ResponseEntity<Map<String, Object>> handleListenerException(ListenerExecutionFailedException ex) {
         LOGGER.error("Error in Kafka listener: {}", ex.getMessage());
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing Kafka message. Please retry.");
+    }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR);
-        response.put("message", "Error processing message from Kafka topic.");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        LOGGER.error("Application runtime error: {}", ex.getMessage());
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected runtime error. Please contact support.");
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGenericException(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         LOGGER.error("Unexpected error: {}", ex.getMessage());
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please contact support.");
+    }
 
+    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
         Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR);
-        response.put("message", "Unexpected error occurred.");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        response.put("status", status.value());
+        response.put("error", message);
+        return new ResponseEntity<>(response, status);
     }
 }

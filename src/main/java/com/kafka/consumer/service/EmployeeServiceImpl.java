@@ -66,6 +66,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         Optional.ofNullable(employee.getSpouse())
                 .ifPresent(spouse -> spouse.setEmployee(employee));
         var retVal = employeeRepo.save(employee);
+
+        LOGGER.info("-----------------------saved and now going to send records to emptool service ---------------------");
         sendToEmployeeManagementToolService(retVal);
         return retVal;
     }

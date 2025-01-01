@@ -321,7 +321,7 @@ document.querySelector("#employeeForm").addEventListener("submit", function (eve
 
     console.log("Constructed Data Object with Name Field:", data);
 
-    fetch("http://localhost:8082/api/v1/save", {
+    fetch("/api/v1/save", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
